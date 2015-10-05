@@ -398,7 +398,7 @@
         }
 
         // Check if the script already been loaded to the page dom.
-        var scriptElements = document.getElementsByTagName('script');
+        /*var scriptElements = document.getElementsByTagName('script');
         for (var i = 0; i < scriptElements.length; i++) {
             var scriptSource = scriptElements[i].getAttribute('src');
             if (scriptSource === source) {
@@ -412,7 +412,7 @@
 
                 return;
             }
-        }
+        }*/
 
         // Add timestamp to prevent ajax cache.
         var url = source + '?_=' + Date.now();
