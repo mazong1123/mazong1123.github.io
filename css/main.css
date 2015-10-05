@@ -2,3 +2,7 @@
     background-color: #fdfdfd;
     padding-bottom: 51px;
 }
+
+#projectDetailList{
+    display:none;
+}
