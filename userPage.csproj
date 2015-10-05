@@ -126,6 +126,11 @@
     <Content Include="dist\fonts\ratchicons.svg" />
     <Content Include="dist\js\ratchetPro.js" />
     <Content Include="dist\js\ratchetPro.min.js" />
+    <Content Include="images\default.png" />
+    <Content Include="images\jordan.jpg" />
+    <Content Include="images\milkyway.jpg" />
+    <Content Include="images\profile.jpg" />
+    <Content Include="images\profile4242.jpg" />
     <Content Include="index.html" />
     <Content Include="life.html" />
     <Content Include="profile.html" />
