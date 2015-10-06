@@ -359,7 +359,7 @@
     'use strict';
 
     // Compatible With CustomEvent
-    if (!window.CustomEvent) {
+    if (typeof window.CustomEvent === 'undefined' || !window.CustomEvent) {
         window.CustomEvent = function (type, config) {
             var e = document.createEvent('CustomEvent');
             e.initCustomEvent(type, config.bubbles, config.cancelable, config.detail);
