@@ -359,7 +359,7 @@
     'use strict';
 
     // Compatible With CustomEvent
-    if (typeof window.CustomEvent === 'undefined' || !window.CustomEvent) {
+    if (!window.CustomEvent) {
         window.CustomEvent = function (type, config) {
             var e = document.createEvent('CustomEvent');
             e.initCustomEvent(type, config.bubbles, config.cancelable, config.detail);
@@ -418,7 +418,6 @@
         var url = source + '?_=' + Date.now();
 
         var xhr = new XMLHttpRequest();
-        xhr.responseType = 'text';
         xhr.open('GET', url, true);
 
         xhr.onreadystatechange = function () {
