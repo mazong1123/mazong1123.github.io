@@ -149,7 +149,6 @@
             this.element.addEventListener('mousedown', (this.touchStart = this.touchStart.bind(this)), true);
             this.element.addEventListener('mousemove', (this.touchMove = this.touchMove.bind(this)), true);
             this.element.addEventListener('mouseup', (this.touchEnd = this.touchEnd.bind(this)), true);
-            this.element.addEventListener('click', (this.click = this.click.bind(this)), true);
             this.active = true;
         },
 
@@ -161,15 +160,6 @@
             this.element.removeEventListener('mousedown', this.touchStart, true);
             this.element.removeEventListener('mousemove', this.touchMove, true);
             this.element.removeEventListener('mouseup', this.touchEnd, true);
-            this.element.removeEventListener('click', this.click, true);
-        },
-
-        click: function (e) {
-            /*if (e.synthetic) {
-                return;
-            }
-            e.preventDefault();
-            e.stopPropagation();*/
         },
 
         touchStart: function (e) {
@@ -709,8 +699,8 @@
         HTMLFormElement,
         HTMLLabelElement];
     for (var i = 0; i < interfaces.length; i++) {
-        (function(original) {
-            interfaces[i].prototype.addEventListener = function(type, listener, useCapture) {
+        (function (original) {
+            interfaces[i].prototype.addEventListener = function (type, listener, useCapture) {
 
                 // Store event data.
                 var newEventData = {
@@ -732,7 +722,8 @@
     });
 
     window.RATCHET.Class.Pusher.settings = {
-        pageContentElementSelector: '.content'
+        pageContentElementSelector: '.content',
+        omitBars: false // Whether update bars (usually header/footer) during page switching.
     };
 
     window.RATCHET.Class.Pusher.push = function (options) {
@@ -747,9 +738,11 @@
 
         var isFileProtocol = /^file:/.test(window.location.protocol);
 
-        for (key in bars) {
-            if (bars.hasOwnProperty(key)) {
-                options[key] = options[key] || document.querySelector(bars[key]);
+        if (!window.RATCHET.Class.Pusher.settings.omitBars) {
+            for (key in bars) {
+                if (bars.hasOwnProperty(key)) {
+                    options[key] = options[key] || document.querySelector(bars[key]);
+                }
             }
         }
 
@@ -898,7 +891,7 @@
             e.which > 1 ||
             e.metaKey ||
             e.ctrlKey ||
-            isScrolling ||
+            isScrolling && !e._finger ||
             location.protocol !== target.protocol ||
             location.host !== target.host ||
             !target.hash && /#/.test(target.href) ||
@@ -980,13 +973,16 @@
 
         if (transitionFromObj.transition) {
             activeObj = extendWithDom(activeObj, window.RATCHET.Class.Pusher.settings.pageContentElementSelector, activeDom.cloneNode(true));
-            for (key in bars) {
-                if (bars.hasOwnProperty(key)) {
-                    barElement = document.querySelector(bars[key]);
-                    if (activeObj[key]) {
-                        swapContent(activeObj[key], barElement);
-                    } else if (barElement) {
-                        barElement.parentNode.removeChild(barElement);
+
+            if (!window.RATCHET.Class.Pusher.settings.omitBars) {
+                for (key in bars) {
+                    if (bars.hasOwnProperty(key)) {
+                        barElement = document.querySelector(bars[key]);
+                        if (activeObj[key]) {
+                            swapContent(activeObj[key], barElement);
+                        } else if (barElement) {
+                            barElement.parentNode.removeChild(barElement);
+                        }
                     }
                 }
             }
@@ -1054,13 +1050,15 @@
         }
 
         if (options.transition) {
-            for (key in bars) {
-                if (bars.hasOwnProperty(key)) {
-                    barElement = document.querySelector(bars[key]);
-                    if (data[key]) {
-                        swapContent(data[key], barElement);
-                    } else if (barElement) {
-                        barElement.parentNode.removeChild(barElement);
+            if (!window.RATCHET.Class.Pusher.settings.omitBars) {
+                for (key in bars) {
+                    if (bars.hasOwnProperty(key)) {
+                        barElement = document.querySelector(bars[key]);
+                        if (data[key]) {
+                            swapContent(data[key], barElement);
+                        } else if (barElement) {
+                            barElement.parentNode.removeChild(barElement);
+                        }
                     }
                 }
             }
@@ -1205,13 +1203,15 @@
             }
         }
 
-        Object.keys(bars).forEach(function (key) {
-            var el = dom.querySelector(bars[key]);
-            if (el) {
-                el.parentNode.removeChild(el);
-            }
-            result[key] = el;
-        });
+        if (!window.RATCHET.Class.Pusher.settings.omitBars) {
+            Object.keys(bars).forEach(function (key) {
+                var el = dom.querySelector(bars[key]);
+                if (el) {
+                    el.parentNode.removeChild(el);
+                }
+                result[key] = el;
+            });
+        }
 
         result.contents = dom.querySelector(fragment);
 
@@ -1245,12 +1245,6 @@
         data.title = data.title && data.title[text].trim();
 
         data = extendWithDom(data, window.RATCHET.Class.Pusher.settings.pageContentElementSelector, body);
-
-        /*if (options.transition) {
-            data = extendWithDom(data, window.RATCHET.Class.Pusher.settings.pageContentElementSelector, body);
-        } else {
-            data.contents = body;
-        }*/
 
         return data;
     };
@@ -1647,7 +1641,16 @@
 (function () {
     'use strict';
 
+    var fingerBlastInstance = null;
+
+    /** 
+    * @description Page management system. 
+    * Encapsulated PUSH system to support multi-page transition as well as page components management.
+    */
     window.RATCHET.Class.PageManager = Class.extend({
+        /** 
+        * @description Initializes a new instance of the window.RATCHET.Class.PageManager class
+        */
         init: function () {
             var self = this;
 
@@ -1674,6 +1677,10 @@
             };
         },
 
+        /** 
+        * @description Entry point for each page. The given callback function will be called after page ready.
+        * @param {function} callback The callback function after page is ready.
+        */
         ready: function (callback) {
             var self = this;
             self.entryCallback = callback;
@@ -1692,6 +1699,9 @@
             }
         },
 
+        /** 
+        * @description Create components based on current dom. Existing components will be disposed and removed.
+        */
         populateComponents: function () {
             var self = this;
 
@@ -1785,8 +1795,8 @@
     };
 
     window.RATCHET.Class.PageManager.enableMouseSupport = function () {
-        if (typeof window.FingerBlast !== 'undefined') {
-            new window.FingerBlast('body');
+        if (typeof window.FingerBlast !== 'undefined' && fingerBlastInstance === null) {
+            fingerBlastInstance = new window.FingerBlast('body');
         }
     };
 
